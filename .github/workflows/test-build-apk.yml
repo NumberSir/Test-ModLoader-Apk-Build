@@ -73,11 +73,11 @@ jobs:
 
       - name: Re-package Apk
         run: |
-          java -jar apktool_2.8.1.jar d ${{ github.workspace }}/DegreesofLewdity-*.apk -o ${{ env.EXTRACT_APK_PATH }}
+          java -jar ${{ fromJson(steps.get_apktool.outputs.downloaded_files)[0] }} d ${{ github.workspace }}/DegreesofLewdity-*.apk -o ${{ env.EXTRACT_APK_PATH }}
           mv "${{ env.RELEASE_FOLDER_PATH }}/Degrees of Lewdity VERSION.html.mod.html" "${{ env.EXTRACT_APK_PATH }}/assets/www/Degrees of Lewdity.html"
           sed -i 's/Press BACK again to exit/再次点击返回键以退出/g' ${{ env.EXTRACT_APK_PATH }}/res/values/strings.xml
-          java -jar apktool_2.8.1.jar b ${{ env.EXTRACT_APK_PATH }} -o DoL.apk
-          java -jar uber-apk-signer-1.3.0.jar -a DoL.apk -o ${{ env.REPACKAGE_APK_PATH }}
+          java -jar ${{ fromJson(steps.get_apktool.outputs.downloaded_files)[0] }} b ${{ env.EXTRACT_APK_PATH }} -o DoL.apk
+          java -jar ${{ fromJson(steps.get_apksigner.outputs.downloaded_files)[0] }} -a DoL.apk -o ${{ env.REPACKAGE_APK_PATH }}
           mv ${{ env.REPACKAGE_APK_PATH }}/DoL-*.apk ${{ github.workspace }}/DoL.apk
 
       - name: Artifact Upload
