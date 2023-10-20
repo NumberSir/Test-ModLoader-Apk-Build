@@ -14,6 +14,7 @@ HEADERS = {
     "cookie": os.getenv("COOKIE")
 }
 APK_URL_TEMP = "https://pixeldrain.com/u/chCgZGVa"
+DIR_ROOT = Path(__file__).parent
 
 
 async def main():
@@ -70,7 +71,7 @@ async def fetch_apk_url(apk_url: str, client: httpx.AsyncClient) -> tuple[str, s
 async def download_apk(apk_download_url: str, apk_filename: str, client: httpx.AsyncClient):
     chunks = await chunk_split(apk_download_url, client, 64)
     tasks = [
-        chunk_download(apk_download_url, client, start, end, idx, len(chunks), Path("dol.apk"))
+        chunk_download(apk_download_url, client, start, end, idx, len(chunks), DIR_ROOT / apk_filename)
         for idx, (start, end) in enumerate(chunks)
     ]
     await asyncio.gather(*tasks)
