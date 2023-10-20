@@ -13,6 +13,7 @@ env:
   REPACKAGE_APK_PATH: ./dolsigned
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   CHINESE_VERSION: alpha4.1.0
+  COOKIE: ${{ secrets.COOKIE }}
 
 jobs:
   build:
