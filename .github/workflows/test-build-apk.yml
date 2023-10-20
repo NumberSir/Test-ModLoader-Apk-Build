@@ -1,0 +1,107 @@
+name: Test Build ModLoader Apk
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      chinese_version:
+        description: "汉化版本"
+env:
+  RELEASE_FOLDER_PATH: ./dol-release
+  EXTRACT_APK_PATH: ./dolapk
+  REPACKAGE_APK_PATH: ./dolsigned
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  CHINESE_VERSION: alpha4.1.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python installation
+        uses: actions/setup-python@v4.7.0
+        with:
+          python-version: '3.10.11'
+          cache: 'pip'
+
+      - name: Python libs installation
+        working-directory: ${{ github.workspace }}
+        run: pip install -r requirements.txt
+
+      - name: Download Raw Apk  # dol.apk
+        working-directory: ${{ github.workspace }}
+        run: python ./download.py
+
+      - name: Download ApkTool
+        id: get_apktool
+        uses: robinraju/release-downloader@v1.8
+        with:
+          repository: "iBotPeaches/Apktool"
+          latest: true
+          fileName: "apktool_*.jar"
+
+      - name: Download ApkSigner
+        id: get_apksigner
+        uses: robinraju/release-downloader@v1.8
+        with:
+          repository: "patrickfav/uber-apk-signer"
+          latest: true
+          fileName: "uber-apk-signer-*.jar"
+
+      - name: Init Java Environment
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'oracle'
+          java-version: '8'
+
+      - name: Download Released ModLoader
+        id: get_release_modloader
+        uses: robinraju/release-downloader@v1.8
+        with:
+          repository: "Lyoko-Jeremie/DoLModLoaderBuild"
+          latest: true
+          fileName: "DoL-ModLoader-*.zip"
+
+      - name: Extract Downloaded ModLoader
+        run: |
+          echo "Downloaded I18N Mod: ${{ steps.get_release_i18n.outputs.tag_name }}"
+          echo "Downloaded ModLoader: ${{ steps.get_release_modloader.outputs.tag_name }}"
+          unzip -q ${{ fromJson(steps.get_release_modloader.outputs.downloaded_files)[0] }} -d ${{ env.RELEASE_FOLDER_PATH }}
+
+      - name: Re-package Apk
+        run: |
+          java -jar apktool_2.8.1.jar d ${{ github.workspace }}/DegreesofLewdity-*.apk -o ${{ env.EXTRACT_APK_PATH }}
+          mv "${{ env.RELEASE_FOLDER_PATH }}/Degrees of Lewdity VERSION.html.mod.html" "${{ env.EXTRACT_APK_PATH }}/assets/www/Degrees of Lewdity.html"
+          sed -i 's/Press BACK again to exit/再次点击返回键以退出/g' ${{ env.EXTRACT_APK_PATH }}/res/values/strings.xml
+          java -jar apktool_2.8.1.jar b ${{ env.EXTRACT_APK_PATH }} -o DoL.apk
+          java -jar uber-apk-signer-1.3.0.jar -a DoL.apk -o ${{ env.REPACKAGE_APK_PATH }}
+          mv ${{ env.REPACKAGE_APK_PATH }}/DoL-*.apk ${{ github.workspace }}/DoL.apk
+
+      - name: Artifact Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: DoL-chs-${{ github.sha }}
+          path: ${{ github.workspace }}/DoL.apk
+
+#      - name: Release i18n Mod (Nightly)
+#        uses: softprops/action-gh-release@v1
+#        if: ${{ github.event_name == 'schedule' }}
+#        with:
+#          files: ${{ github.workspace }}/DoL.apk
+#          name: Auto Release nightly v${{ steps.game_version.outputs.version }}-chs-${{ env.CHINESE_VERSION }}-auto-${{ steps.date.outputs.date }}
+#          tag_name: ${{ steps.game_version.outputs.version }}-chs-${{ env.CHINESE_VERSION }}-auto-${{ steps.date.outputs.date }}-${{ github.sha }}
+#          body: Scheduled task on ${{ steps.date.outputs.date }}
+#          prerelease: true
+
+      - name: Release i18n Mod (Manually)
+        uses: softprops/action-gh-release@v1
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        with:
+          files: ${{ github.workspace }}/DoL.apk
+          name: Release chs-${{ github.event.inputs.chinese_version }}
+          tag_name: chs-${{ github.event.inputs.chinese_version }}-${{ github.sha }}
+          body: release chs-${{ github.event.inputs.chinese_version }}
+
+

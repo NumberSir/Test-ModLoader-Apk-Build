@@ -1,0 +1,4 @@
+httpx~=0.24.1
+aiofiles~=23.1.0
+loguru~=0.7.0
+lxml~=4.9.3
