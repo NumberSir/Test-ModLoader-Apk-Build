@@ -15,6 +15,9 @@ env:
   CHINESE_VERSION: alpha4.1.0
   COOKIE: ${{ secrets.COOKIE }}
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
